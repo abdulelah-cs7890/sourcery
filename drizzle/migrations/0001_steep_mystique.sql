@@ -1,0 +1,1 @@
+ALTER TABLE "lookups" ALTER COLUMN "tiktok_url" DROP NOT NULL;

@@ -1,8 +1,15 @@
 import { parse } from "node-html-parser";
 import type { RawMatch } from "./types";
 
-// NOTE: AliExpress markup is the most fragile thing in the codebase.
-// When this breaks, the fix lives *only* in this file.
+// AliExpress is the most fragile thing in the codebase. When this breaks, the
+// fix lives ONLY in this file. As of 2026-05, AliExpress:
+//   1. Aggressively anti-bot-blocks repeated requests via /punish interstitials
+//   2. Replaced window.runParams with an obfuscated _dida_config_ payload that
+//      isn't strict JSON
+//   3. Renders product cards with CSS-module-hashed class names (.l1_e, .l1_ki)
+//      but keeps the semantic .search-card-item class on each anchor
+// Strategy: detect the anti-bot page and bail; otherwise walk .search-card-item
+// anchors, pull title from img[alt], price from card text via regex.
 
 const USER_AGENTS = [
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -12,6 +19,7 @@ const USER_AGENTS = [
 
 const FETCH_TIMEOUT_MS = 8_000;
 const MAX_RESULTS = 5;
+const DEBUG = process.env.SOURCERY_DEBUG_MATCHERS === "1";
 
 export async function searchAliexpress(
   keywords: string[],
@@ -25,75 +33,85 @@ export async function searchAliexpress(
     const res = await fetch(url, {
       headers: {
         "user-agent": ua,
-        accept: "text/html,application/xhtml+xml",
+        accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "accept-language": "en-US,en;q=0.9",
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "none",
       },
       cache: "no-store",
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      if (DEBUG) console.log("[aliexpress] non-200:", res.status);
+      return [];
+    }
+
     const html = await res.text();
+    if (DEBUG) console.log("[aliexpress] body length:", html.length);
+
+    if (isBlocked(html)) {
+      if (DEBUG) console.log("[aliexpress] anti-bot interstitial detected");
+      return [];
+    }
+
     return parseSearchPage(html, MAX_RESULTS);
-  } catch {
+  } catch (e) {
+    if (DEBUG)
+      console.log(
+        "[aliexpress] error:",
+        e instanceof Error ? e.message : String(e),
+      );
     return [];
   }
 }
 
-type AliexpressItem = {
-  productId?: string | number;
-  product_id?: string | number;
-  title?: { displayTitle?: string } | string;
-  image?: { imgUrl?: string } | string;
-  prices?: {
-    salePrice?: { minPrice?: string | number };
-    minPrice?: string | number;
-  };
-};
+function isBlocked(html: string): boolean {
+  if (html.length >= 50_000) return false;
+  return (
+    html.includes("_____tmd_____") ||
+    html.includes('"action":"captcha"') ||
+    html.includes("/punish")
+  );
+}
 
 function parseSearchPage(html: string, max: number): RawMatch[] {
-  // Preferred path: AliExpress embeds search data as JSON in a <script>.
-  // window.runParams.mods.itemList.content holds the array.
-  const scriptMatch = html.match(
-    /window\.runParams\s*=\s*({[\s\S]*?});\s*<\/script>/,
-  );
-  if (scriptMatch) {
-    try {
-      const data = JSON.parse(scriptMatch[1]) as {
-        mods?: { itemList?: { content?: AliexpressItem[] } };
-        itemList?: { content?: AliexpressItem[] };
-      };
-      const items =
-        data?.mods?.itemList?.content ?? data?.itemList?.content ?? [];
-      const out = itemsToMatches(items, max);
-      if (out.length > 0) return out;
-    } catch {
-      // fall through
-    }
-  }
-
-  // Fallback: DOM scraping. Less reliable but a useful safety net.
   const root = parse(html);
-  const anchors = root.querySelectorAll("a[href*='/item/']");
+  const cards = root.querySelectorAll(".search-card-item");
+  if (DEBUG) console.log("[aliexpress] cards found:", cards.length);
+
   const seen = new Set<string>();
   const out: RawMatch[] = [];
-  for (const a of anchors) {
+
+  for (const card of cards) {
     if (out.length >= max) break;
-    const href = a.getAttribute("href") ?? "";
-    const m = href.match(/\/item\/(\d+)/);
-    if (!m) continue;
-    const productId = m[1];
+
+    const href = card.getAttribute("href") ?? "";
+    const idMatch = href.match(/\/item\/(\d+)/);
+    if (!idMatch) continue;
+    const productId = idMatch[1];
     if (seen.has(productId)) continue;
     seen.add(productId);
-    const title =
-      a.getAttribute("title") ??
-      a.querySelector("h3, h2, [title]")?.text?.trim() ??
-      "";
+
+    const img = card.querySelector("img");
+    const imgAlt = img?.getAttribute("alt")?.trim() ?? "";
+    const imgSrc = img?.getAttribute("src") ?? null;
+
+    let title = imgAlt;
+    if (!title) {
+      const text = card.text.trim().replace(/\s+/g, " ");
+      title = text.slice(0, 120);
+    }
     if (!title) continue;
-    const imgSrc = a.querySelector("img")?.getAttribute("src") ?? null;
-    const priceText =
-      a.querySelector("[class*='price'], [class*='Price']")?.text ?? "";
-    const priceFloat = parseFloat(priceText.replace(/[^\d.]/g, ""));
+
+    const cardText = card.text;
+    const priceMatch = cardText.match(/\$\s*([\d,]+(?:\.\d+)?)/);
+    const priceFloat = priceMatch
+      ? parseFloat(priceMatch[1].replace(/,/g, ""))
+      : NaN;
+
     out.push({
       source: "aliexpress",
       productUrl: `https://www.aliexpress.com/item/${productId}.html`,
@@ -106,37 +124,8 @@ function parseSearchPage(html: string, max: number): RawMatch[] {
       currency: "USD",
     });
   }
-  return out;
-}
 
-function itemsToMatches(items: AliexpressItem[], max: number): RawMatch[] {
-  const out: RawMatch[] = [];
-  for (const item of items) {
-    if (out.length >= max) break;
-    const productId = String(item.productId ?? item.product_id ?? "");
-    if (!productId) continue;
-    const title =
-      typeof item.title === "string"
-        ? item.title
-        : (item.title?.displayTitle ?? "");
-    if (!title) continue;
-    const image =
-      typeof item.image === "string" ? item.image : (item.image?.imgUrl ?? "");
-    const priceRaw =
-      item.prices?.salePrice?.minPrice ?? item.prices?.minPrice ?? "0";
-    const priceFloat = parseFloat(String(priceRaw).replace(/[^\d.]/g, ""));
-    out.push({
-      source: "aliexpress",
-      productUrl: `https://www.aliexpress.com/item/${productId}.html`,
-      productKey: `aliexpress:${productId}`,
-      title,
-      imageUrl: normalizeUrl(image),
-      priceCents: Number.isFinite(priceFloat)
-        ? Math.round(priceFloat * 100)
-        : null,
-      currency: "USD",
-    });
-  }
+  if (DEBUG) console.log("[aliexpress] returning", out.length, "matches");
   return out;
 }
 

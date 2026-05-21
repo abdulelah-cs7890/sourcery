@@ -8,7 +8,8 @@ const TOP_N = 3;
 
 export async function runMatchers(caption: string): Promise<ScoredMatch[]> {
   const keywords = extractKeywords(caption);
-  if (keywords.length === 0) return [];
+  // Need at least 2 useful tokens — otherwise we're searching for noise.
+  if (keywords.length < 2) return [];
 
   const settled = await Promise.allSettled([
     searchAliexpress(keywords),

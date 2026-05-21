@@ -16,6 +16,16 @@ const STOP_WORDS = new Set([
   "tip", "tips", "trick", "tricks", "hack", "hacks", "secret", "secrets",
   "winning", "winner", "product", "products", "dropshipping", "dropship",
   "ecom", "ecommerce", "online", "business", "money", "rich", "viral",
+  // Generic English nouns/verbs that survived the original filter and
+  // showed up as garbage queries during Week 2 testing.
+  "time", "here", "today", "tomorrow", "yesterday", "thing", "things",
+  "lot", "lots", "bit", "everyone", "everything", "something", "someone",
+  "people", "year", "day", "week", "month", "night", "first", "last",
+  "next", "real", "right", "wrong", "little", "big",
+  "start", "stop", "give", "gave", "take", "took", "try", "tried",
+  "keep", "kept", "know", "knew", "tell", "told", "said", "says",
+  "come", "came", "find", "found", "feel", "felt", "think", "thought",
+  "mean", "means", "done", "gonna", "wanna",
 ]);
 
 const EMOJI_REGEX = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu;

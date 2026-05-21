@@ -7,11 +7,10 @@ export const redis = new Redis({
   token: env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-// TODO(week2): drop back to 3 / 24h before final verification.
-// Temporarily bumped to 50 for dev iteration after the user proved 3/24h works.
+// 3 lookups per 24h sliding window per user (free-tier limit)
 export const lookupRatelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(50, "24 h"),
+  limiter: Ratelimit.slidingWindow(3, "24 h"),
   prefix: "sourcery:lookup",
   analytics: true,
 });

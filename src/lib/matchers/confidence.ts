@@ -8,26 +8,56 @@ export function score(match: RawMatch, keywords: string[]): ScoredMatch {
 }
 
 function rawScore(match: RawMatch, keywords: string[]): number {
-  const overlap = keywordOverlap(match.title, keywords);
+  const overlap = weightedKeywordOverlap(match.title, keywords);
+  // Zero overlap means the match is irrelevant; price plausibility shouldn't
+  // earn it a 40% floor.
+  if (overlap === 0) return 0;
+  const bonus = bigramBonus(match.title, keywords);
   const plausibility = pricePlausibility(match.priceCents);
-  const combined = 0.6 * overlap + 0.4 * plausibility;
+  const combined = 0.7 * overlap + 0.3 * plausibility + bonus;
   return Math.max(0, Math.min(1, combined));
 }
 
-function keywordOverlap(title: string, keywords: string[]): number {
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length >= 3);
+}
+
+// Longer tokens count more — "projector" matters more than "led".
+function tokenWeight(token: string): number {
+  return Math.min(token.length, 8) / 8;
+}
+
+function weightedKeywordOverlap(title: string, keywords: string[]): number {
   if (keywords.length === 0) return 0;
-  const titleTokens = new Set(
-    title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, " ")
-      .split(/\s+/)
-      .filter((t) => t.length >= 3),
-  );
-  let hits = 0;
+  const titleTokens = new Set(tokenize(title));
+  let matched = 0;
+  let total = 0;
   for (const kw of keywords) {
-    if (titleTokens.has(kw)) hits++;
+    const w = tokenWeight(kw);
+    total += w;
+    if (titleTokens.has(kw)) matched += w;
   }
-  return hits / keywords.length;
+  return total === 0 ? 0 : matched / total;
+}
+
+// Reward when two adjacent caption keywords both appear in the title
+// (ordered match preferred), e.g. "moon lamp" vs unrelated solo hits.
+function bigramBonus(title: string, keywords: string[]): number {
+  if (keywords.length < 2) return 0;
+  const titleTokens = tokenize(title);
+  const titlePairs = new Set<string>();
+  for (let i = 0; i + 1 < titleTokens.length; i++) {
+    titlePairs.add(`${titleTokens[i]} ${titleTokens[i + 1]}`);
+  }
+  for (let i = 0; i + 1 < keywords.length; i++) {
+    if (titlePairs.has(`${keywords[i]} ${keywords[i + 1]}`)) return 0.1;
+    if (titlePairs.has(`${keywords[i + 1]} ${keywords[i]}`)) return 0.05;
+  }
+  return 0;
 }
 
 function pricePlausibility(priceCents: number | null): number {

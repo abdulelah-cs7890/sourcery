@@ -1,5 +1,7 @@
 allowBuilds:
+  '@sentry/cli': true
   esbuild: true
+  ffmpeg-static: true
   sharp: true
   unrs-resolver: true
   yt-dlp-exec: true

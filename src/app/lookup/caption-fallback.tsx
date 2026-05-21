@@ -22,6 +22,11 @@ export default function CaptionFallback() {
         body: JSON.stringify({ caption }),
       });
       const data = await res.json();
+      if (res.status === 429) {
+        setStatus("error");
+        setErrorMsg("Daily limit reached. Come back tomorrow or upgrade.");
+        return;
+      }
       if (!res.ok) {
         setStatus("error");
         setErrorMsg(data.message ?? data.error ?? "Something went wrong");

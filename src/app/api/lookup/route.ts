@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { db, lookups } from "@/lib/db";
 import { IngestionError } from "@/lib/ingestion/types";
+import { runFrameExtraction } from "@/lib/pipeline/run-frames";
 import { runLookup } from "@/lib/pipeline/run-lookup";
 import { lookupRatelimit } from "@/lib/redis";
 
@@ -58,6 +59,9 @@ export async function POST(req: Request) {
     .returning({ id: lookups.id });
 
   const lookupId = row.id;
+
+  // Fire frame extraction in the background — best-effort, never blocks.
+  waitUntil(runFrameExtraction(lookupId, parsed.data.tiktokUrl));
 
   const pipelinePromise = runLookup(lookupId, "url", parsed.data.tiktokUrl);
   const timeoutPromise = new Promise<typeof TIMEOUT_SENTINEL>((resolve) =>

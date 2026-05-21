@@ -40,6 +40,7 @@ export async function GET(
     caption: lookup.caption,
     tiktokUrl: lookup.tiktokUrl,
     errorMessage: lookup.errorMessage,
+    frameUrls: lookup.frameUrls ?? [],
     matches: matchRows,
   });
 }

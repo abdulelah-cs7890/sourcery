@@ -83,6 +83,7 @@ export const lookups = pgTable(
     errorMessage: text("error_message"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     completedAt: timestamp("completed_at"),
+    frameUrls: text("frame_urls").array(),
   },
   (table) => [
     index("lookups_user_created_idx").on(table.userId, table.createdAt),

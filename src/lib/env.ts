@@ -12,6 +12,7 @@ export const env = createEnv({
     AUTH_URL: z.string().url().optional(),
     CJ_EMAIL: z.string().email(),
     CJ_API_KEY: z.string().min(1),
+    BLOB_READ_WRITE_TOKEN: z.string().min(1),
   },
   experimental__runtimeEnv: process.env,
   emptyStringAsUndefined: true,

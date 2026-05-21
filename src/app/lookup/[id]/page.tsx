@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db, lookups, matches } from "@/lib/db";
 import CaptionFallback from "../caption-fallback";
-import MatchList, { type MatchUI } from "../match-list";
+import { type MatchUI } from "../match-list";
 import LookupPoller from "./lookup-poller";
 
 export default async function LookupResultPage({
@@ -75,10 +75,13 @@ export default async function LookupResultPage({
         )}
       </div>
 
-      {lookup.status === "completed" && <MatchList matches={initialMatches} />}
-
-      {(lookup.status === "pending" || lookup.status === "processing") && (
-        <LookupPoller id={id} />
+      {lookup.status !== "failed" && (
+        <LookupPoller
+          id={id}
+          initialStatus={lookup.status as "pending" | "processing" | "completed"}
+          initialMatches={initialMatches}
+          initialFrameUrls={lookup.frameUrls ?? []}
+        />
       )}
 
       {lookup.status === "failed" && (

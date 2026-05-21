@@ -37,6 +37,24 @@ export async function fetchTikTokMeta(url: string): Promise<VideoMeta> {
   };
 }
 
+export async function downloadTikTokVideo(
+  url: string,
+  outPath: string,
+): Promise<void> {
+  try {
+    await ytdlp(url, {
+      format: "mp4",
+      output: outPath,
+      noWarnings: true,
+      noPlaylist: true,
+      noCheckCertificate: true,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw mapYtDlpError(msg);
+  }
+}
+
 function mapYtDlpError(message: string): IngestionError {
   const lower = message.toLowerCase();
   if (lower.includes("private") || lower.includes("login required")) {

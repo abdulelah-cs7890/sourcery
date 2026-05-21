@@ -15,6 +15,13 @@
       "when": 1779279526087,
       "tag": "0001_steep_mystique",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779379896413,
+      "tag": "0002_lucky_micromax",
+      "breakpoints": true
     }
   ]
 }

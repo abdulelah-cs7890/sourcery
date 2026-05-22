@@ -12,23 +12,41 @@ import {
 } from "@/lib/ingestion/tiktok-url";
 
 const FRAME_COUNT = 5;
+// Used when we don't know the actual video duration (file uploads). ffmpeg
+// will just silently emit fewer frames if the video is shorter, which is fine.
+const FALLBACK_DURATION_SEC = 30;
 
-// Best-effort background job: yt-dlp downloads .mp4, ffmpeg extracts keyframes,
+export type VideoSource =
+  | { kind: "url"; url: string }
+  | { kind: "file"; path: string; deleteAfter?: boolean };
+
+// Best-effort background job: gets the video bytes, ffmpeg extracts keyframes,
 // @vercel/blob hosts them publicly, lookup row gets frame URLs persisted.
 // Every error is caught and reported to Sentry; nothing bubbles up so the
 // surrounding /api/lookup response stays successful.
 export async function runFrameExtraction(
   lookupId: string,
-  tiktokUrl: string,
+  source: VideoSource,
 ): Promise<void> {
-  const tempVideoPath = path.join(os.tmpdir(), `sourcery-${lookupId}.mp4`);
+  const tempVideoPath =
+    source.kind === "url"
+      ? path.join(os.tmpdir(), `sourcery-${lookupId}.mp4`)
+      : source.path;
+  const ownsVideoFile = source.kind === "url" || source.deleteAfter === true;
   let framePaths: string[] = [];
 
   try {
-    const meta = await fetchTikTokMeta(tiktokUrl);
-    const duration = meta.durationSec ?? 10;
+    let duration = FALLBACK_DURATION_SEC;
 
-    await downloadTikTokVideo(tiktokUrl, tempVideoPath);
+    if (source.kind === "url") {
+      const meta = await fetchTikTokMeta(source.url);
+      duration = meta.durationSec ?? FALLBACK_DURATION_SEC;
+      await downloadTikTokVideo(source.url, tempVideoPath);
+    }
+    // For "file" source: the upload route has already written the .mp4 to disk
+    // and points us at it. We don't know the duration without ffprobe; the
+    // FALLBACK_DURATION_SEC sample window is good enough for v1 — ffmpeg
+    // produces fewer frames than requested if the video is shorter.
 
     framePaths = await extractFrames(
       tempVideoPath,
@@ -44,9 +62,11 @@ export async function runFrameExtraction(
       .set({ frameUrls: urls })
       .where(eq(lookups.id, lookupId));
   } catch (err) {
-    Sentry.captureException(err, { tags: { stage: "frame-extraction", lookupId } });
+    Sentry.captureException(err, {
+      tags: { stage: "frame-extraction", lookupId },
+    });
   } finally {
-    await safeUnlink(tempVideoPath);
+    if (ownsVideoFile) await safeUnlink(tempVideoPath);
     for (const p of framePaths) {
       await safeUnlink(p);
     }

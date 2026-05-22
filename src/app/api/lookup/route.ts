@@ -78,7 +78,12 @@ async function handlePost(req: Request) {
   const lookupId = row.id;
 
   // Fire frame extraction in the background — best-effort, never blocks.
-  waitUntil(runFrameExtraction(lookupId, parsed.data.tiktokUrl));
+  waitUntil(
+    runFrameExtraction(lookupId, {
+      kind: "url",
+      url: parsed.data.tiktokUrl,
+    }),
+  );
 
   const pipelinePromise = runLookup(lookupId, "url", parsed.data.tiktokUrl);
   const timeoutPromise = new Promise<typeof TIMEOUT_SENTINEL>((resolve) =>

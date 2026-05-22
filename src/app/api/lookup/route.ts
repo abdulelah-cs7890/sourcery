@@ -25,6 +25,23 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  try {
+    return await handlePost(req);
+  } catch (err) {
+    // Top-level safety net: anything unexpected (auth/ratelimit/DB throw)
+    // surfaces as a structured 500 instead of an empty 502/504 from Vercel.
+    console.error("/api/lookup top-level error", err);
+    return NextResponse.json(
+      {
+        error: "internal_error",
+        message: err instanceof Error ? err.message : String(err),
+      },
+      { status: 500 },
+    );
+  }
+}
+
+async function handlePost(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

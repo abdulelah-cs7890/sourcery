@@ -22,7 +22,13 @@ export default function LookupForm() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ tiktokUrl: url }),
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: Record<string, unknown> | null = null;
+      try {
+        data = rawText ? (JSON.parse(rawText) as Record<string, unknown>) : null;
+      } catch {
+        // body wasn't JSON — fall through; we'll surface res.status + rawText
+      }
 
       if (res.status === 429) {
         setStatus("error");
@@ -30,14 +36,15 @@ export default function LookupForm() {
         return;
       }
 
-      if (res.status === 422 && data.reason === "ingestion_failed") {
+      if (res.status === 422 && data?.reason === "ingestion_failed") {
         setStatus("fallback");
         return;
       }
 
-      if (!res.ok) {
+      if (!res.ok || !data) {
         setStatus("error");
-        setErrorMsg(data.message ?? data.error ?? "Something went wrong");
+        const body = rawText.slice(0, 300) || "(empty body)";
+        setErrorMsg(`Server returned ${res.status} ${res.statusText}. Body: ${body}`);
         return;
       }
 

@@ -17,6 +17,21 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  try {
+    return await handlePost(req);
+  } catch (err) {
+    console.error("/api/lookup/caption top-level error", err);
+    return NextResponse.json(
+      {
+        error: "internal_error",
+        message: err instanceof Error ? err.message : String(err),
+      },
+      { status: 500 },
+    );
+  }
+}
+
+async function handlePost(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });

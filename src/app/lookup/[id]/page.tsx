@@ -82,6 +82,9 @@ export default async function LookupResultPage({
           initialMatches={initialMatches}
           initialFrameUrls={lookup.frameUrls ?? []}
           hasVideo={lookup.tiktokUrl !== null}
+          hasCaption={
+            lookup.caption !== null && lookup.caption.trim().length > 0
+          }
         />
       )}
 

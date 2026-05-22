@@ -37,6 +37,7 @@ export default function LookupPoller({
   initialMatches,
   initialFrameUrls,
   hasVideo,
+  hasCaption,
 }: {
   id: string;
   initialStatus: Status;
@@ -44,6 +45,8 @@ export default function LookupPoller({
   initialFrameUrls: string[];
   /** True for URL lookups (frames eventually arrive). False for caption-paste (no frames ever). */
   hasVideo: boolean;
+  /** True if the lookup has caption text that matchers ran against. False for video-only uploads. */
+  hasCaption: boolean;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>(initialStatus);
@@ -145,7 +148,17 @@ export default function LookupPoller({
         ) : (
           <FrameStripSkeleton />
         ))}
-      <MatchList matches={matches} />
+      {/* Only render MatchList when matchers actually ran (caption present)
+          OR results came back. Video-only uploads with no caption skip
+          matchers entirely and shouldn't see "No matches found". */}
+      {(hasCaption || matches.length > 0) && <MatchList matches={matches} />}
+      {hasVideo && !hasCaption && matches.length === 0 && (
+        <p className="text-sm text-zinc-500 mt-6">
+          Video-only lookup — use the keyframes above to reverse-search on
+          Google Lens. Paste the caption below the URL form to also get
+          AliExpress / CJ keyword matches.
+        </p>
+      )}
     </>
   );
 }

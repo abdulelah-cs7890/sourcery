@@ -36,11 +36,14 @@ export default function LookupPoller({
   initialStatus,
   initialMatches,
   initialFrameUrls,
+  hasVideo,
 }: {
   id: string;
   initialStatus: Status;
   initialMatches: MatchUI[];
   initialFrameUrls: string[];
+  /** True for URL lookups (frames eventually arrive). False for caption-paste (no frames ever). */
+  hasVideo: boolean;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>(initialStatus);
@@ -49,8 +52,12 @@ export default function LookupPoller({
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
-    // Nothing left to poll for if matches AND frames are already in.
-    if (initialStatus === "completed" && initialFrameUrls.length > 0) return;
+    // Nothing left to poll for if:
+    //  - lookup is in a terminal state AND we either have frames or won't get them
+    if (initialStatus === "completed") {
+      if (!hasVideo) return;
+      if (initialFrameUrls.length > 0) return;
+    }
     if (initialStatus === "failed") return;
 
     let cancelled = false;
@@ -93,6 +100,8 @@ export default function LookupPoller({
               router.refresh();
               return;
             }
+            // Caption-paste lookups never get frames — bail immediately.
+            if (!hasVideo) return;
             if (completedAt === null) completedAt = Date.now();
             const hasFrames = (data.frameUrls ?? []).length > 0;
             const graceElapsed = Date.now() - completedAt > FRAMES_GRACE_MS;
@@ -112,9 +121,9 @@ export default function LookupPoller({
       cancelled = true;
       if (timerId) clearTimeout(timerId);
     };
-  }, [id, initialStatus, initialFrameUrls.length, router]);
+  }, [id, initialStatus, initialFrameUrls.length, hasVideo, router]);
 
-  // ── Pre-match spinner ─────────────────────────────────────────
+  // ── Pre-match state ──────────────────────────────────────────
   if (status === "pending" || status === "processing") {
     if (timedOut) {
       return (
@@ -124,30 +133,65 @@ export default function LookupPoller({
         </p>
       );
     }
-    return (
-      <div className="flex items-center gap-3">
-        <div className="h-3 w-3 rounded-full bg-zinc-400 animate-pulse" />
-        <p className="text-sm text-zinc-500">
-          Looking up your match… (this can take up to 30 seconds)
-        </p>
-      </div>
-    );
+    return <PreMatchSpinner />;
   }
 
-  // ── Completed: matches always shown; frames if ready, else "scanning..." ──
+  // ── Completed state ─────────────────────────────────────────
   return (
     <>
-      {frameUrls.length > 0 ? (
-        <FrameStrip frames={frameUrls} />
-      ) : (
-        <div className="mb-6 flex items-center gap-3">
-          <div className="h-3 w-3 rounded-full bg-zinc-400 animate-pulse" />
-          <p className="text-sm text-zinc-500">
-            Scanning the video for visual matches…
-          </p>
-        </div>
-      )}
+      {hasVideo &&
+        (frameUrls.length > 0 ? (
+          <FrameStrip frames={frameUrls} />
+        ) : (
+          <FrameStripSkeleton />
+        ))}
       <MatchList matches={matches} />
     </>
+  );
+}
+
+function PreMatchSpinner() {
+  return (
+    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 flex items-start gap-4">
+      <div className="relative shrink-0">
+        <div className="h-10 w-10 rounded-full border-2 border-zinc-200 dark:border-zinc-800" />
+        <div className="absolute inset-0 h-10 w-10 rounded-full border-2 border-zinc-900 dark:border-zinc-100 border-t-transparent animate-spin" />
+      </div>
+      <div>
+        <h2 className="text-base font-semibold mb-1">
+          Hunting for matches…
+        </h2>
+        <p className="text-sm text-zinc-500">
+          Fetching the TikTok caption, then searching AliExpress and CJ
+          Dropshipping in parallel. Usually under 30 seconds.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function FrameStripSkeleton() {
+  return (
+    <section className="mb-6">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="h-2 w-2 rounded-full bg-zinc-400 animate-pulse" />
+        <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          Searching the video for visual matches…
+        </h2>
+      </div>
+      <p className="text-xs text-zinc-500 mb-3">
+        Extracting keyframes from the video so you can reverse-search them on
+        Google Lens. Usually 15–30 seconds.
+      </p>
+      <div className="flex gap-2">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="w-20 h-20 rounded-md bg-zinc-200 dark:bg-zinc-800 animate-pulse"
+            style={{ animationDelay: `${i * 120}ms` }}
+          />
+        ))}
+      </div>
+    </section>
   );
 }

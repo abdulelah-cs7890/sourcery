@@ -81,6 +81,7 @@ export default async function LookupResultPage({
           initialStatus={lookup.status as "pending" | "processing" | "completed"}
           initialMatches={initialMatches}
           initialFrameUrls={lookup.frameUrls ?? []}
+          hasVideo={lookup.tiktokUrl !== null}
         />
       )}
 

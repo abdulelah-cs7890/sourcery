@@ -136,7 +136,17 @@ export default function LookupPoller({
         </p>
       );
     }
-    return <PreMatchSpinner />;
+    // If frames already landed (upload path completes Blob upload before
+    // the lookup row flips to "completed"), show them immediately + the
+    // matches spinner below.
+    return (
+      <>
+        {hasVideo && frameUrls.length > 0 && (
+          <FrameStrip frames={frameUrls} />
+        )}
+        <PreMatchSpinner />
+      </>
+    );
   }
 
   // ── Completed state ─────────────────────────────────────────

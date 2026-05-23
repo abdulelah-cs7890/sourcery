@@ -11,6 +11,7 @@ export default function CaptionFallback() {
   const [caption, setCaption] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [progressMsg, setProgressMsg] = useState("");
 
   async function onSubmitCaption(e: React.FormEvent) {
     e.preventDefault();
@@ -43,10 +44,18 @@ export default function CaptionFallback() {
   async function onUploadFile(file: File) {
     setStatus("uploading");
     setErrorMsg("");
+    setProgressMsg("Loading video engine…");
     try {
+      const { extractFramesInBrowser } = await import("./video-processor");
+      const frames = await extractFramesInBrowser(file, 5, (label) =>
+        setProgressMsg(label),
+      );
+
+      setProgressMsg("Uploading frames…");
       const fd = new FormData();
-      fd.append("video", file);
-      // Use whatever caption the user typed (may be empty)
+      for (let i = 0; i < frames.length; i++) {
+        fd.append(`frame_${i}`, frames[i], `frame_${i}.jpg`);
+      }
       if (caption.trim()) fd.append("caption", caption.trim());
 
       const res = await fetch("/api/lookup/upload", {
@@ -76,7 +85,7 @@ export default function CaptionFallback() {
       router.push(`/lookup/${data.id}`);
     } catch (err) {
       setStatus("error");
-      setErrorMsg(String(err));
+      setErrorMsg(err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -115,7 +124,7 @@ export default function CaptionFallback() {
         disabled={submitting}
         hint={
           status === "uploading"
-            ? "Uploading…"
+            ? progressMsg || "Processing…"
             : "Drop the downloaded .mp4 here for visual matching"
         }
       />

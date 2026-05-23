@@ -12,6 +12,7 @@ export default function LookupForm() {
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [progressMsg, setProgressMsg] = useState("");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,9 +62,19 @@ export default function LookupForm() {
   async function onUploadFile(file: File) {
     setStatus("uploading");
     setErrorMsg("");
+    setProgressMsg("Loading video engine…");
     try {
+      const { extractFramesInBrowser } = await import("./video-processor");
+      const frames = await extractFramesInBrowser(file, 5, (label) =>
+        setProgressMsg(label),
+      );
+
+      setProgressMsg("Uploading frames…");
       const fd = new FormData();
-      fd.append("video", file);
+      for (let i = 0; i < frames.length; i++) {
+        fd.append(`frame_${i}`, frames[i], `frame_${i}.jpg`);
+      }
+
       const res = await fetch("/api/lookup/upload", {
         method: "POST",
         body: fd,
@@ -94,7 +105,7 @@ export default function LookupForm() {
       router.push(`/lookup/${data.id}`);
     } catch (err) {
       setStatus("error");
-      setErrorMsg(String(err));
+      setErrorMsg(err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -147,14 +158,14 @@ export default function LookupForm() {
         disabled={submitting}
         hint={
           status === "uploading"
-            ? "Uploading…"
+            ? progressMsg || "Processing…"
             : "Drop a TikTok .mp4 here for visual matching"
         }
       />
       <p className="text-xs text-zinc-500">
         When TikTok blocks the URL path, download the video yourself and drop
-        it here. We&apos;ll extract keyframes and give you Google Lens
-        reverse-search links.
+        it here. Keyframes are extracted in your browser (no upload of the
+        full video) and we give you Google Lens reverse-search links.
       </p>
 
       {errorMsg && (

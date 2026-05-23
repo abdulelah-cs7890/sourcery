@@ -1,21 +1,21 @@
+import { put } from "@vercel/blob";
 import { waitUntil } from "@vercel/functions";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { writeFile } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
 import { auth } from "@/auth";
 import { db, lookups } from "@/lib/db";
-import { runFrameExtraction } from "@/lib/pipeline/run-frames";
 import { runLookup } from "@/lib/pipeline/run-lookup";
 import { lookupRatelimit } from "@/lib/redis";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_BYTES = 50 * 1024 * 1024; // 50 MB
-const ALLOWED_PREFIX = "video/";
+const FRAME_COUNT = 5;
+const MAX_FRAME_BYTES = 2 * 1024 * 1024; // 2 MB per JPG — generous cap
 
+// Accepts client-extracted JPG keyframes + optional caption.
+// Client did ffmpeg.wasm extraction in-browser, so server only deals with
+// final JPGs (much smaller than the original .mp4) + Blob upload.
 export async function POST(req: Request) {
   try {
     return await handlePost(req);
@@ -47,38 +47,42 @@ async function handlePost(req: Request) {
     );
   }
 
-  const file = formData.get("video");
   const captionInput = (formData.get("caption") ?? "").toString().trim();
 
-  if (!(file instanceof File)) {
-    return NextResponse.json(
-      { error: "missing_video", message: "Expected a 'video' file field." },
-      { status: 400 },
-    );
-  }
-  if (!file.type.startsWith(ALLOWED_PREFIX)) {
-    return NextResponse.json(
-      {
-        error: "invalid_type",
-        message: `File must be a video (got '${file.type}').`,
-      },
-      { status: 400 },
-    );
-  }
-  if (file.size === 0) {
-    return NextResponse.json(
-      { error: "empty_file", message: "File is empty." },
-      { status: 400 },
-    );
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      {
-        error: "file_too_large",
-        message: `Max ${Math.round(MAX_BYTES / 1024 / 1024)} MB.`,
-      },
-      { status: 413 },
-    );
+  const frameFiles: File[] = [];
+  for (let i = 0; i < FRAME_COUNT; i++) {
+    const f = formData.get(`frame_${i}`);
+    if (!(f instanceof File)) {
+      return NextResponse.json(
+        { error: "missing_frame", message: `Missing frame_${i}` },
+        { status: 400 },
+      );
+    }
+    if (f.size === 0) {
+      return NextResponse.json(
+        { error: "empty_frame", message: `frame_${i} is empty` },
+        { status: 400 },
+      );
+    }
+    if (f.size > MAX_FRAME_BYTES) {
+      return NextResponse.json(
+        {
+          error: "frame_too_large",
+          message: `frame_${i} > ${Math.round(MAX_FRAME_BYTES / 1024 / 1024)} MB`,
+        },
+        { status: 413 },
+      );
+    }
+    if (!f.type.startsWith("image/")) {
+      return NextResponse.json(
+        {
+          error: "invalid_frame_type",
+          message: `frame_${i} type '${f.type}' is not an image`,
+        },
+        { status: 400 },
+      );
+    }
+    frameFiles.push(f);
   }
 
   const { success, remaining } = await lookupRatelimit.limit(
@@ -91,9 +95,8 @@ async function handlePost(req: Request) {
     );
   }
 
-  // Persist the lookup row first so we have a stable id for the temp file +
-  // Blob keys. `tiktok_url` gets an "upload://" sentinel so LookupPoller's
-  // `hasVideo` derivation (tiktokUrl !== null) correctly waits for frames.
+  // Create lookup row first so we have a stable id for Blob paths.
+  // tiktokUrl = "upload://..." sentinel keeps LookupPoller.hasVideo true.
   const [row] = await db
     .insert(lookups)
     .values({
@@ -103,43 +106,48 @@ async function handlePost(req: Request) {
       status: "pending",
     })
     .returning({ id: lookups.id });
-
   const lookupId = row.id;
 
-  // Buffer the upload to /tmp so the background frame-extraction job can read it.
-  const buf = Buffer.from(await file.arrayBuffer());
-  const tempPath = path.join(os.tmpdir(), `sourcery-upload-${lookupId}.mp4`);
-  await writeFile(tempPath, buf);
+  // Upload each JPG to Vercel Blob.
+  const frameUrls: string[] = [];
+  for (let i = 0; i < frameFiles.length; i++) {
+    const bytes = Buffer.from(await frameFiles[i].arrayBuffer());
+    const { url } = await put(`frames/${lookupId}/${i}.jpg`, bytes, {
+      access: "public",
+      contentType: "image/jpeg",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
+    frameUrls.push(url);
+  }
 
-  // Frame extraction always runs — we have the video bytes.
-  waitUntil(
-    runFrameExtraction(lookupId, {
-      kind: "file",
-      path: tempPath,
-      deleteAfter: true,
-    }),
-  );
-
-  // If the user also gave us a caption, kick off matchers in parallel.
-  // Otherwise mark the lookup completed now so the result page doesn't stay
-  // in "processing" forever — the FrameStrip still arrives via polling.
   if (captionInput) {
+    // Frames in, matchers still running. Status flips to completed when runLookup finishes.
+    await db
+      .update(lookups)
+      .set({ frameUrls, status: "processing" })
+      .where(eq(lookups.id, lookupId));
     waitUntil(
       runLookup(lookupId, "caption", captionInput).catch((e) =>
         console.error("upload matchers failed", lookupId, e),
       ),
     );
   } else {
+    // No caption → no matchers. Everything is done.
     await db
       .update(lookups)
-      .set({ status: "completed", completedAt: new Date() })
+      .set({
+        frameUrls,
+        status: "completed",
+        completedAt: new Date(),
+      })
       .where(eq(lookups.id, lookupId));
   }
 
   return NextResponse.json({
     id: lookupId,
     status: captionInput ? "processing" : "completed",
-    async: true,
+    frameUrls,
     remaining,
   });
 }

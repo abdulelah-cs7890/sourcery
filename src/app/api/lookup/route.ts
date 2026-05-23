@@ -4,7 +4,6 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { db, lookups } from "@/lib/db";
 import { IngestionError } from "@/lib/ingestion/types";
-import { runFrameExtraction } from "@/lib/pipeline/run-frames";
 import { runLookup } from "@/lib/pipeline/run-lookup";
 import { lookupRatelimit } from "@/lib/redis";
 
@@ -77,13 +76,10 @@ async function handlePost(req: Request) {
 
   const lookupId = row.id;
 
-  // Fire frame extraction in the background — best-effort, never blocks.
-  waitUntil(
-    runFrameExtraction(lookupId, {
-      kind: "url",
-      url: parsed.data.tiktokUrl,
-    }),
-  );
+  // Frame extraction now happens client-side via ffmpeg.wasm (see
+  // src/app/lookup/video-processor.ts). Stream B will add a server-side step
+  // here that downloads the .mp4 via yt-dlp_linux/ssstik to a Blob URL so the
+  // client can fetch + process it.
 
   const pipelinePromise = runLookup(lookupId, "url", parsed.data.tiktokUrl);
   const timeoutPromise = new Promise<typeof TIMEOUT_SENTINEL>((resolve) =>

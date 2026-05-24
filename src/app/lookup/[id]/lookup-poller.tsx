@@ -55,8 +55,6 @@ export default function LookupPoller({
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
-    // Nothing left to poll for if:
-    //  - lookup is in a terminal state AND we either have frames or won't get them
     if (initialStatus === "completed") {
       if (!hasVideo) return;
       if (initialFrameUrls.length > 0) return;
@@ -103,7 +101,6 @@ export default function LookupPoller({
               router.refresh();
               return;
             }
-            // Caption-paste lookups never get frames — bail immediately.
             if (!hasVideo) return;
             if (completedAt === null) completedAt = Date.now();
             const hasFrames = (data.frameUrls ?? []).length > 0;
@@ -130,15 +127,14 @@ export default function LookupPoller({
   if (status === "pending" || status === "processing") {
     if (timedOut) {
       return (
-        <p className="text-sm text-amber-700 dark:text-amber-300">
-          This is taking longer than expected. Refresh in a minute, or try a
-          different URL.
-        </p>
+        <div className="rounded-2xl border border-amber-900/60 bg-amber-950/30 p-5">
+          <p className="text-sm text-amber-200">
+            This is taking longer than expected. Refresh in a minute, or try
+            a different URL.
+          </p>
+        </div>
       );
     }
-    // If frames already landed (upload path completes Blob upload before
-    // the lookup row flips to "completed"), show them immediately + the
-    // matches spinner below.
     return (
       <>
         {hasVideo && frameUrls.length > 0 && (
@@ -158,12 +154,9 @@ export default function LookupPoller({
         ) : (
           <FrameStripSkeleton />
         ))}
-      {/* Only render MatchList when matchers actually ran (caption present)
-          OR results came back. Video-only uploads with no caption skip
-          matchers entirely and shouldn't see "No matches found". */}
       {(hasCaption || matches.length > 0) && <MatchList matches={matches} />}
       {hasVideo && !hasCaption && matches.length === 0 && (
-        <p className="text-sm text-zinc-500 mt-6">
+        <p className="text-sm text-[var(--color-text-muted)] mt-6">
           Video-only lookup — use the keyframes above to reverse-search on
           Google Lens. Paste the caption below the URL form to also get
           AliExpress / CJ keyword matches.
@@ -175,16 +168,16 @@ export default function LookupPoller({
 
 function PreMatchSpinner() {
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 flex items-start gap-4">
+    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 flex items-start gap-4">
       <div className="relative shrink-0">
-        <div className="h-10 w-10 rounded-full border-2 border-zinc-200 dark:border-zinc-800" />
-        <div className="absolute inset-0 h-10 w-10 rounded-full border-2 border-zinc-900 dark:border-zinc-100 border-t-transparent animate-spin" />
+        <div className="h-10 w-10 rounded-full border-2 border-[var(--color-border)]" />
+        <div className="absolute inset-0 h-10 w-10 rounded-full border-2 border-[var(--color-accent)] border-t-transparent animate-spin" />
       </div>
       <div>
-        <h2 className="text-base font-semibold mb-1">
+        <h2 className="text-base font-semibold mb-1 text-[var(--color-text)]">
           Hunting for matches…
         </h2>
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-[var(--color-text-muted)]">
           Fetching the TikTok caption, then searching AliExpress and CJ
           Dropshipping in parallel. Usually under 30 seconds.
         </p>
@@ -197,12 +190,12 @@ function FrameStripSkeleton() {
   return (
     <section className="mb-6">
       <div className="flex items-center gap-2 mb-2">
-        <div className="h-2 w-2 rounded-full bg-zinc-400 animate-pulse" />
-        <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        <div className="h-2 w-2 rounded-full bg-[var(--color-accent)] animate-pulse" />
+        <h2 className="text-sm font-medium text-[var(--color-text)]">
           Searching the video for visual matches…
         </h2>
       </div>
-      <p className="text-xs text-zinc-500 mb-3">
+      <p className="text-xs text-[var(--color-text-muted)] mb-3">
         Extracting keyframes from the video so you can reverse-search them on
         Google Lens. Usually 15–30 seconds.
       </p>
@@ -210,7 +203,7 @@ function FrameStripSkeleton() {
         {[0, 1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="w-20 h-20 rounded-md bg-zinc-200 dark:bg-zinc-800 animate-pulse"
+            className="w-20 h-20 rounded-xl border border-[var(--color-border)] bg-[var(--color-panel)] animate-pulse"
             style={{ animationDelay: `${i * 120}ms` }}
           />
         ))}

@@ -18,6 +18,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     verificationTokensTable: verificationTokens,
   }),
   session: { strategy: "jwt" },
+  pages: {
+    signIn: "/signin",
+    verifyRequest: "/auth/verify",
+  },
   providers: [
     Resend({
       apiKey: env.RESEND_API_KEY,

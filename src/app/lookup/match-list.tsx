@@ -14,9 +14,11 @@ export type MatchUI = {
 export default function MatchList({ matches }: { matches: MatchUI[] }) {
   if (matches.length === 0) {
     return (
-      <p className="text-sm text-zinc-500">
-        No matches found. Try a different URL or paste the caption manually.
-      </p>
+      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
+        <p className="text-sm text-[var(--color-text-muted)]">
+          No matches found. Try a different URL or paste the caption manually.
+        </p>
+      </div>
     );
   }
   return (

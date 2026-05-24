@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --color-bg: #08090c;
+  --color-panel: #0d0f14;
+  --color-panel-2: #11141b;
+  --color-border: #1f2329;
+  --color-border-strong: #2a3036;
+  --color-text: #f4f4f5;
+  --color-text-muted: #a1a1aa;
+  --color-text-faint: #71717a;
+  --color-accent: #c8ff3e;
+  --color-accent-hover: #b9f024;
+  --color-accent-soft: rgba(200, 255, 62, 0.12);
+  --color-accent-text: #0a0a0a;
+  --color-emerald-glow: #10b981;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --shadow-glow-lime: 0 0 40px -10px rgba(200, 255, 62, 0.5);
+  --shadow-glow-emerald: 0 0 120px -20px rgba(16, 185, 129, 0.45);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html,
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  body {
+    font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-accent-text);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .bg-dotgrid {
+    background-image: radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.06) 1px,
+      transparent 1px
+    );
+    background-size: 24px 24px;
+  }
+
+  .bg-hero-radial {
+    background-color: #08090c;
+    background-image:
+      radial-gradient(
+        ellipse 80% 60% at 50% 0%,
+        rgba(16, 185, 129, 0.35) 0%,
+        rgba(13, 58, 45, 0.18) 30%,
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 60% 50% at 50% 110%,
+        rgba(200, 255, 62, 0.1) 0%,
+        transparent 60%
+      );
+  }
 }

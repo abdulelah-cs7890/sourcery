@@ -65,14 +65,14 @@ export default function VideoDropZone({
     if (status === "dragover") setStatus("idle");
   }
 
-  const borderColor =
+  const borderClasses =
     status === "dragover"
-      ? "border-zinc-500"
+      ? "border-[var(--color-accent)] shadow-[var(--shadow-glow-lime)]"
       : status === "error"
-        ? "border-red-400"
+        ? "border-red-700/60"
         : status === "selected"
-          ? "border-emerald-500"
-          : "border-zinc-300 dark:border-zinc-700";
+          ? "border-[var(--color-accent)]/60"
+          : "border-[var(--color-border)]";
 
   return (
     <div className="space-y-2">
@@ -85,22 +85,36 @@ export default function VideoDropZone({
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        className={`flex items-center justify-center gap-3 rounded-md border border-dashed ${borderColor} px-4 py-6 text-sm cursor-pointer transition select-none ${
-          disabled ? "opacity-50 cursor-not-allowed" : "hover:border-zinc-400"
+        className={`flex items-center justify-center gap-3 rounded-2xl border border-dashed ${borderClasses} bg-[var(--color-bg)]/50 px-4 py-7 text-sm cursor-pointer transition select-none ${
+          disabled ? "opacity-60 cursor-not-allowed" : "hover:border-[var(--color-border-strong)]"
         }`}
       >
         {disabled ? (
           // Parent is processing (extracting frames, uploading, etc.) —
-          // show its progress hint with a spinner. Hides the green
+          // show its progress hint with a lime spinner. Hides the
           // checkmark since "selected" alone is misleading when the
           // work is ongoing.
-          <span className="inline-flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
-            <span className="inline-block h-3 w-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
+          <span className="inline-flex items-center gap-2 text-[var(--color-text-muted)]">
+            <span className="inline-block h-3 w-3 rounded-full border-2 border-[var(--color-accent)] border-t-transparent animate-spin" />
             {hint}
           </span>
         ) : status === "selected" ? (
-          <span className="text-emerald-700 dark:text-emerald-300">
-            ✓ {selectedName}
+          <span className="inline-flex items-center gap-2 text-[var(--color-accent)]">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            {selectedName}
           </span>
         ) : (
           <>
@@ -114,14 +128,14 @@ export default function VideoDropZone({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-zinc-400"
+              className="text-[var(--color-text-faint)]"
               aria-hidden
             >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-            <span className="text-zinc-500 dark:text-zinc-400">{hint}</span>
+            <span className="text-[var(--color-text-muted)]">{hint}</span>
           </>
         )}
         <input
@@ -134,7 +148,9 @@ export default function VideoDropZone({
         />
       </div>
       {error && (
-        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-xs text-red-400">
+          {error}
+        </p>
       )}
     </div>
   );

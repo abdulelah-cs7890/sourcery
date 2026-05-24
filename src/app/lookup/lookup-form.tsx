@@ -112,7 +112,7 @@ export default function LookupForm() {
   if (status === "fallback") {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950 rounded-md p-3">
+        <p className="text-sm text-amber-200/90 bg-amber-950/40 border border-amber-900/60 rounded-2xl p-4">
           Couldn&apos;t fetch that TikTok automatically (it may be private,
           removed, or geo-blocked). Either paste the caption below — or drop
           the downloaded .mp4 and we&apos;ll search the actual video frames.
@@ -125,32 +125,33 @@ export default function LookupForm() {
   const submitting = status === "submitting" || status === "uploading";
 
   return (
-    <div className="space-y-4">
-      <form onSubmit={onSubmit} className="space-y-4">
+    <div className="space-y-5">
+      <form onSubmit={onSubmit} className="space-y-3">
         <input
           type="url"
           required
           placeholder="https://www.tiktok.com/@user/video/..."
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400"
+          className="w-full rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] px-5 py-3 text-sm focus:outline-none focus:border-[var(--color-accent)] focus:shadow-[var(--shadow-glow-lime)] transition disabled:opacity-50"
           disabled={submitting}
         />
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full rounded-full bg-[var(--color-accent)] text-[var(--color-accent-text)] px-5 py-3 text-sm font-semibold shadow-[var(--shadow-glow-lime)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
-          {status === "submitting" ? "Processing…" : "Find source"}
+          {status === "submitting" ? "Processing…" : "Find source →"}
         </button>
       </form>
 
-      <div className="relative flex items-center py-2">
-        <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800" />
-        <span className="mx-3 text-xs uppercase tracking-wide text-zinc-400">
+      <div className="relative flex items-center py-1">
+        <div className="flex-grow border-t border-[var(--color-border)]" />
+        <span className="mx-3 inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-faint)]">
+          <span className="inline-block w-1 h-1 rounded-full bg-[var(--color-accent)]" />
           or
         </span>
-        <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800" />
+        <div className="flex-grow border-t border-[var(--color-border)]" />
       </div>
 
       <VideoDropZone
@@ -162,14 +163,14 @@ export default function LookupForm() {
             : "Drop a TikTok .mp4 here for visual matching"
         }
       />
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-[var(--color-text-muted)]">
         When TikTok blocks the URL path, download the video yourself and drop
         it here. Keyframes are extracted in your browser (no upload of the
         full video) and we give you Google Lens reverse-search links.
       </p>
 
       {errorMsg && (
-        <pre className="rounded-md bg-red-50 dark:bg-red-950 text-red-900 dark:text-red-200 p-3 text-xs whitespace-pre-wrap">
+        <pre className="rounded-2xl bg-red-950/40 border border-red-900/60 text-red-200 p-4 text-xs whitespace-pre-wrap">
           {errorMsg}
         </pre>
       )}

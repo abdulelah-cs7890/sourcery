@@ -14,7 +14,7 @@ export default async function LookupResultPage({
 }) {
   const session = await auth();
   if (!session?.user?.id) {
-    redirect("/api/auth/signin?callbackUrl=/lookup");
+    redirect("/signin?callbackUrl=/lookup");
   }
 
   const { id } = await params;
@@ -26,11 +26,18 @@ export default async function LookupResultPage({
 
   if (!lookup) {
     return (
-      <main className="mx-auto max-w-2xl px-4 py-16">
-        <p className="text-sm text-zinc-500 mb-4">Lookup not found.</p>
-        <Link href="/lookup" className="text-sm underline">
-          ← Try another
-        </Link>
+      <main className="mx-auto max-w-2xl px-4 sm:px-6 py-16">
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6">
+          <p className="text-sm text-[var(--color-text-muted)] mb-4">
+            Lookup not found.
+          </p>
+          <Link
+            href="/lookup"
+            className="inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] px-4 py-1.5 text-xs font-medium hover:border-[var(--color-border-strong)] transition"
+          >
+            ← Try another
+          </Link>
+        </div>
       </main>
     );
   }
@@ -56,22 +63,26 @@ export default async function LookupResultPage({
   }));
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-12">
+    <main className="mx-auto max-w-4xl px-4 sm:px-6 py-10 sm:py-12">
       <div className="mb-8">
         <Link
           href="/lookup"
-          className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+          className="inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text-muted)] px-4 py-1.5 text-xs font-medium hover:text-[var(--color-text)] hover:border-[var(--color-border-strong)] transition"
         >
           ← New lookup
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Results</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mt-5 text-[var(--color-text)]">
+          Results
+        </h1>
         {lookup.caption && (
-          <p className="text-sm text-zinc-500 mt-2 line-clamp-2">
-            Caption:{" "}
-            <span className="text-zinc-700 dark:text-zinc-300">
+          <div className="mt-4 rounded-2xl border-l-2 border-[var(--color-accent)] bg-[var(--color-panel)] pl-4 pr-5 py-3">
+            <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-text-faint)] mb-1">
+              Caption
+            </p>
+            <p className="text-sm text-[var(--color-text-muted)] line-clamp-3">
               {lookup.caption}
-            </span>
-          </p>
+            </p>
+          </div>
         )}
       </div>
 
@@ -90,17 +101,19 @@ export default async function LookupResultPage({
 
       {lookup.status === "failed" && (
         <div className="space-y-6">
-          <p className="text-sm text-red-700 dark:text-red-300">
-            That lookup failed.
-            {lookup.errorMessage && (
-              <span className="text-zinc-500 dark:text-zinc-400">
-                {" "}
-                ({lookup.errorMessage})
-              </span>
-            )}
-          </p>
-          <div>
-            <h2 className="text-sm font-medium mb-2">
+          <div className="rounded-2xl border border-red-900/60 bg-red-950/40 p-5">
+            <p className="text-sm text-red-200">
+              That lookup failed.
+              {lookup.errorMessage && (
+                <span className="text-red-300/70">
+                  {" "}
+                  ({lookup.errorMessage})
+                </span>
+              )}
+            </p>
+          </div>
+          <div className="relative rounded-3xl border border-[var(--color-border)] bg-[var(--color-panel)] p-6 sm:p-8">
+            <h2 className="text-sm font-medium text-[var(--color-text-muted)] mb-4">
               Try pasting the caption instead
             </h2>
             <CaptionFallback />

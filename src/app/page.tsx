@@ -271,7 +271,7 @@ export default async function HomePage() {
                     <path d="M2 12h20" />
                   </svg>
                 }
-                label="Trending board (coming soon)"
+                label="Live trending board"
               />
             </div>
           </div>

@@ -11,7 +11,13 @@ export default function SiteFooter() {
           />
           <span>© 2026 Sourcery</span>
         </div>
-        <nav className="flex items-center gap-6">
+        <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <Link
+            href="/trending"
+            className="hover:text-[var(--color-text)] transition"
+          >
+            Trending
+          </Link>
           <Link
             href="/legal/terms"
             className="hover:text-[var(--color-text)] transition"

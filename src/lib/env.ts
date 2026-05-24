@@ -13,6 +13,9 @@ export const env = createEnv({
     CJ_EMAIL: z.string().email(),
     CJ_API_KEY: z.string().min(1),
     BLOB_READ_WRITE_TOKEN: z.string().min(1),
+    // Only needed in prod where Vercel Cron hits `/api/cron/*`. The route
+    // returns 401 if the value is missing, so local dev runs fine without it.
+    CRON_SECRET: z.string().min(1).optional(),
   },
   experimental__runtimeEnv: process.env,
   emptyStringAsUndefined: true,

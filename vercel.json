@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/recalc-trending",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}

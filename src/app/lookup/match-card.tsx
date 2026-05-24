@@ -1,4 +1,5 @@
 import type { MatchUI } from "./match-list";
+import MarginCalculator from "./margin-calculator";
 
 const SOURCE_LABELS: Record<MatchUI["source"], string> = {
   aliexpress: "AliExpress",
@@ -55,6 +56,11 @@ export default function MatchCard({ match }: { match: MatchUI }) {
         >
           View on {SOURCE_LABELS[match.source]} →
         </a>
+        <MarginCalculator
+          initialCost={
+            match.priceCents !== null ? match.priceCents / 100 : null
+          }
+        />
       </div>
     </article>
   );

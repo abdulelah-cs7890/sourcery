@@ -28,6 +28,12 @@ export default async function SiteHeader() {
           >
             Lookup
           </Link>
+          <Link
+            href="/trending"
+            className="hover:text-[var(--color-text)] transition"
+          >
+            Trending
+          </Link>
           <a
             href="https://github.com/abdulelah-cs7890/sourcery"
             target="_blank"

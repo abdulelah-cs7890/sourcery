@@ -7,12 +7,9 @@ export const redis = new Redis({
   token: env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-// TODO(week4c): drop back to 3 / 24h before Stripe paywall ships.
-// Temporarily bumped to 50 so dev iteration on prod isn't blocked by the
-// real free-tier limit while there's only one tester (the user).
 export const lookupRatelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(50, "24 h"),
+  limiter: Ratelimit.slidingWindow(3, "24 h"),
   prefix: "sourcery:lookup",
   analytics: true,
 });

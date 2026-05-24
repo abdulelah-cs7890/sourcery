@@ -95,7 +95,7 @@ follow ~15–30s later.
 | Hosting | **Vercel** Hobby ($0) | Edge + serverless in one deploy |
 | Auth | **Auth.js v5** + Resend magic links | No passwords; one-click sign-in |
 | Database | **Neon** Postgres + **Drizzle** ORM | Type-safe queries, serverless-friendly |
-| Cache / rate-limit | **Upstash** Redis (sliding-window 3/24h) | Free tier, REST-based |
+| Cache / rate-limit | **Upstash** Redis (sliding-window 10/24h) | Free tier, REST-based |
 | Async work | `@vercel/functions` `waitUntil()` | 25s sync budget + ~30s background grace |
 | Frame extraction | Browser `<video>` + Canvas | 100× faster than ffmpeg.wasm; no Linux binary on prod |
 | Keyframe hosting | **Vercel Blob** (public store) | Google Lens can fetch the JPGs |

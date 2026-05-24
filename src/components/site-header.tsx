@@ -49,7 +49,7 @@ export default async function SiteHeader() {
             <>
               <Link
                 href="/lookup"
-                className="hidden sm:inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] px-4 py-1.5 text-sm font-medium hover:border-[var(--color-border-strong)] transition"
+                className="btn-outline hidden sm:inline-flex rounded-full px-4 py-1.5 text-sm font-medium"
               >
                 Lookup →
               </Link>
@@ -61,7 +61,7 @@ export default async function SiteHeader() {
               >
                 <button
                   type="submit"
-                  className="rounded-full bg-[var(--color-accent)] text-[var(--color-accent-text)] px-4 py-1.5 text-sm font-medium shadow-[var(--shadow-glow-lime)] hover:bg-[var(--color-accent-hover)] transition"
+                  className="btn-lime rounded-full px-4 py-1.5 text-sm font-medium"
                 >
                   Sign out
                 </button>
@@ -71,13 +71,13 @@ export default async function SiteHeader() {
             <>
               <Link
                 href="/signin"
-                className="hidden sm:inline-flex rounded-full border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] px-4 py-1.5 text-sm font-medium hover:border-[var(--color-border-strong)] transition"
+                className="btn-outline hidden sm:inline-flex rounded-full px-4 py-1.5 text-sm font-medium"
               >
                 Sign in
               </Link>
               <Link
                 href="/signin?callbackUrl=/lookup"
-                className="rounded-full bg-[var(--color-accent)] text-[var(--color-accent-text)] px-4 py-1.5 text-sm font-medium shadow-[var(--shadow-glow-lime)] hover:bg-[var(--color-accent-hover)] transition"
+                className="btn-lime rounded-full px-4 py-1.5 text-sm font-medium"
               >
                 Try it free →
               </Link>

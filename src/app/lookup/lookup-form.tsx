@@ -139,7 +139,7 @@ export default function LookupForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-full bg-[var(--color-accent)] text-[var(--color-accent-text)] px-5 py-3 text-sm font-semibold shadow-[var(--shadow-glow-lime)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="btn-lime w-full rounded-full px-5 py-3 text-sm font-semibold"
         >
           {status === "submitting" ? "Processing…" : "Find source →"}
         </button>

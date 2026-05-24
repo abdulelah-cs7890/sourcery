@@ -162,7 +162,7 @@ function EmptyState() {
         </p>
         <Link
           href="/lookup"
-          className="inline-flex items-center rounded-full bg-[var(--color-accent)] text-[var(--color-accent-text)] px-5 py-2.5 text-sm font-semibold shadow-[var(--shadow-glow-lime)] hover:bg-[var(--color-accent-hover)] transition"
+          className="btn-lime inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold"
         >
           Run a lookup →
         </Link>

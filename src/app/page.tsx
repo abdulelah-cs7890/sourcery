@@ -35,7 +35,7 @@ export default async function HomePage() {
           <div className="mt-9 flex flex-col sm:flex-row items-center gap-3">
             <Link
               href={ctaHref}
-              className="rounded-full bg-[var(--color-accent)] text-[var(--color-accent-text)] px-6 py-3 text-sm font-semibold shadow-[var(--shadow-glow-lime)] hover:bg-[var(--color-accent-hover)] transition"
+              className="btn-lime rounded-full px-6 py-3 text-sm font-semibold"
             >
               {ctaLabel}
             </Link>
@@ -43,14 +43,14 @@ export default async function HomePage() {
               href="https://github.com/abdulelah-cs7890/sourcery"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] px-6 py-3 text-sm font-medium hover:border-[var(--color-border-strong)] transition"
+              className="btn-outline rounded-full px-6 py-3 text-sm font-medium"
             >
               View on GitHub
             </a>
           </div>
 
           <p className="mt-5 text-xs text-[var(--color-text-faint)]">
-            Free tier: 3 lookups per day. No card required.
+            Free tier: 10 lookups per day. No card required.
           </p>
         </div>
       </section>
@@ -184,7 +184,7 @@ export default async function HomePage() {
               <div className="mt-6">
                 <Link
                   href={ctaHref}
-                  className="inline-flex items-center rounded-full bg-[var(--color-accent)] text-[var(--color-accent-text)] px-5 py-2.5 text-sm font-semibold shadow-[var(--shadow-glow-lime)] hover:bg-[var(--color-accent-hover)] transition"
+                  className="btn-lime inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold"
                 >
                   {ctaLabel}
                 </Link>
@@ -285,12 +285,12 @@ export default async function HomePage() {
           <span className="text-[var(--color-accent)]">Faster. Smarter.</span>
         </h2>
         <p className="mt-4 text-[var(--color-text-muted)] max-w-xl mx-auto">
-          Free tier, no card. Three lookups per day.
+          Free tier, no card. 10 lookups per day.
         </p>
         <div className="mt-8">
           <Link
             href={ctaHref}
-            className="inline-flex items-center rounded-full bg-[var(--color-accent)] text-[var(--color-accent-text)] px-6 py-3 text-sm font-semibold shadow-[var(--shadow-glow-lime)] hover:bg-[var(--color-accent-hover)] transition"
+            className="btn-lime inline-flex items-center rounded-full px-6 py-3 text-sm font-semibold"
           >
             {ctaLabel}
           </Link>

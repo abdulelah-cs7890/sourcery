@@ -56,7 +56,7 @@ export default function VerifyRequestPage() {
 
           <Link
             href="/signin"
-            className="inline-flex items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] px-5 py-2.5 text-sm font-medium hover:border-[var(--color-border-strong)] transition"
+            className="btn-outline inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium"
           >
             ← Back to sign in
           </Link>

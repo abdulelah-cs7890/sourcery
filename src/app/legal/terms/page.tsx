@@ -9,7 +9,7 @@ export default function TermsPage() {
     <main className="mx-auto max-w-2xl px-6 py-16">
       <Link
         href="/"
-        className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-panel)] text-[var(--color-text)] px-4 py-1.5 text-xs font-medium hover:border-[var(--color-border-strong)] transition"
+        className="btn-outline inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium"
       >
         ← Home
       </Link>

@@ -66,3 +66,51 @@
       );
   }
 }
+
+/* Button utilities — kept outside @layer so Tailwind doesn't tree-shake
+   the pseudo-class rules. Use `.btn-lime` for primary CTAs and
+   `.btn-outline` for secondary CTAs. */
+.btn-lime {
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  box-shadow: var(--shadow-glow-lime);
+  transition:
+    background-color 150ms ease,
+    box-shadow 200ms ease,
+    transform 150ms ease;
+}
+.btn-lime:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+  box-shadow: 0 0 60px -5px rgba(200, 255, 62, 0.85);
+  transform: translateY(-1px);
+}
+.btn-lime:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-glow-lime);
+}
+.btn-lime:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-outline {
+  background-color: var(--color-panel);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+.btn-outline:hover:not(:disabled) {
+  background-color: var(--color-panel-2);
+  border-color: var(--color-text-muted);
+  transform: translateY(-1px);
+}
+.btn-outline:active:not(:disabled) {
+  transform: translateY(0);
+}
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

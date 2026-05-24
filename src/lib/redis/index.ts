@@ -9,7 +9,7 @@ export const redis = new Redis({
 
 export const lookupRatelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(3, "24 h"),
+  limiter: Ratelimit.slidingWindow(10, "24 h"),
   prefix: "sourcery:lookup",
   analytics: true,
 });

@@ -89,7 +89,16 @@ export default function VideoDropZone({
           disabled ? "opacity-50 cursor-not-allowed" : "hover:border-zinc-400"
         }`}
       >
-        {status === "selected" ? (
+        {disabled ? (
+          // Parent is processing (extracting frames, uploading, etc.) —
+          // show its progress hint with a spinner. Hides the green
+          // checkmark since "selected" alone is misleading when the
+          // work is ongoing.
+          <span className="inline-flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
+            <span className="inline-block h-3 w-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
+            {hint}
+          </span>
+        ) : status === "selected" ? (
           <span className="text-emerald-700 dark:text-emerald-300">
             ✓ {selectedName}
           </span>

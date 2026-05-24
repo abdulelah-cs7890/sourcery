@@ -68,7 +68,7 @@ async function handlePost(req: Request) {
 
   const lookupId = row.id;
 
-  const pipelinePromise = runLookup(lookupId, "caption", parsed.data.caption);
+  const pipelinePromise = runLookup(lookupId, parsed.data.caption);
   const timeoutPromise = new Promise<typeof TIMEOUT_SENTINEL>((resolve) =>
     setTimeout(() => resolve(TIMEOUT_SENTINEL), SYNC_BUDGET_MS),
   );

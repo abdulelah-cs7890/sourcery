@@ -84,6 +84,10 @@ export const lookups = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     completedAt: timestamp("completed_at"),
     frameUrls: text("frame_urls").array(),
+    // Server-stored CORS-friendly copy of the source .mp4. Populated by
+    // Stream B's URL flow so the client can fetch the bytes and extract
+    // keyframes in-browser. Null for caption-only and .mp4-upload lookups.
+    videoBlobUrl: text("video_blob_url"),
   },
   (table) => [
     index("lookups_user_created_idx").on(table.userId, table.createdAt),

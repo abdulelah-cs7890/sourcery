@@ -117,12 +117,17 @@ on my machine" to "actually runs on Vercel."
    and the UI shows a graceful badge instead of an error.
 2. **Vercel serverless has no Python 3.** `yt-dlp-exec` ships the Python
    flavor of yt-dlp, so URL ingestion died on prod with
-   `env: 'python3': No such file or directory`. Worked around by adding a
-   `.mp4` upload fallback — the user downloads the TikTok themselves and
-   drops it in.
+   `env: 'python3': No such file or directory`. First fix was a `.mp4`
+   upload fallback. Final fix (Stream B): swap yt-dlp entirely for
+   **scraping ssstik.io** — one request returns both the caption and a
+   watermark-free `.mp4` URL hosted on their CDN. No Python, no binaries.
+   The server fetches the mp4 bytes, re-hosts on Vercel Blob so the
+   client can grab them CORS-safely, and frame extraction runs in the
+   browser exactly like the upload path. Code in
+   [src/lib/ingestion/ssstik.ts](src/lib/ingestion/ssstik.ts).
 3. **TikTok IP-blocks Vercel's data-center range.** Even when yt-dlp ran,
-   it 403'd against TikTok. The upload path bypasses this entirely; URL
-   paste convenience is documented as a known limitation.
+   it 403'd against TikTok. ssstik dodges this entirely since it runs
+   from its own infra; we never call TikTok directly from Vercel.
 4. **ffmpeg-static silently fails on Vercel Linux.** Status flipped to
    `completed` but `frame_urls` stayed `null`. Solution: moved keyframe
    extraction to the **browser** via `@ffmpeg/ffmpeg` WASM.

@@ -128,7 +128,7 @@ async function handlePost(req: Request) {
       .set({ frameUrls, status: "processing" })
       .where(eq(lookups.id, lookupId));
     waitUntil(
-      runLookup(lookupId, "caption", captionInput).catch((e) =>
+      runLookup(lookupId, captionInput).catch((e) =>
         console.error("upload matchers failed", lookupId, e),
       ),
     );

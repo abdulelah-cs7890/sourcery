@@ -39,6 +39,7 @@ export async function GET(
     status: lookup.status,
     caption: lookup.caption,
     tiktokUrl: lookup.tiktokUrl,
+    videoBlobUrl: lookup.videoBlobUrl,
     errorMessage: lookup.errorMessage,
     frameUrls: lookup.frameUrls ?? [],
     matches: matchRows,

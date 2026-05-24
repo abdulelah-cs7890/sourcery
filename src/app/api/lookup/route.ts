@@ -1,8 +1,11 @@
+import { put } from "@vercel/blob";
 import { waitUntil } from "@vercel/functions";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { db, lookups } from "@/lib/db";
+import { fetchViaSsstik } from "@/lib/ingestion/ssstik";
 import { IngestionError } from "@/lib/ingestion/types";
 import { runLookup } from "@/lib/pipeline/run-lookup";
 import { lookupRatelimit } from "@/lib/redis";
@@ -27,8 +30,6 @@ export async function POST(req: Request) {
   try {
     return await handlePost(req);
   } catch (err) {
-    // Top-level safety net: anything unexpected (auth/ratelimit/DB throw)
-    // surfaces as a structured 500 instead of an empty 502/504 from Vercel.
     console.error("/api/lookup top-level error", err);
     return NextResponse.json(
       {
@@ -76,12 +77,43 @@ async function handlePost(req: Request) {
 
   const lookupId = row.id;
 
-  // Frame extraction now happens client-side via ffmpeg.wasm (see
-  // src/app/lookup/video-processor.ts). Stream B will add a server-side step
-  // here that downloads the .mp4 via yt-dlp_linux/ssstik to a Blob URL so the
-  // client can fetch + process it.
+  // Stream B: ssstik returns both the caption and a watermark-free mp4 URL in
+  // one shot. Replaces the prior yt-dlp-exec call (which needed Python 3 that
+  // Vercel serverless doesn't have).
+  let ssstik: Awaited<ReturnType<typeof fetchViaSsstik>>;
+  try {
+    ssstik = await fetchViaSsstik(parsed.data.tiktokUrl);
+  } catch (err) {
+    if (err instanceof IngestionError) {
+      // Mark lookup failed so the result page surfaces CaptionFallback.
+      await db
+        .update(lookups)
+        .set({
+          status: "failed",
+          errorMessage: `ingestion:${err.code}:${err.message}`,
+        })
+        .where(eq(lookups.id, lookupId));
+      return NextResponse.json(
+        {
+          id: lookupId,
+          status: "failed",
+          reason: "ingestion_failed",
+          code: err.code,
+          retryWithCaption: true,
+        },
+        { status: 422 },
+      );
+    }
+    throw err;
+  }
 
-  const pipelinePromise = runLookup(lookupId, "url", parsed.data.tiktokUrl);
+  // Background: download the mp4 to our Blob so the client can fetch it
+  // CORS-safely and extract keyframes in the browser. Best-effort — if it
+  // fails, the lookup still completes with matches, just no frame strip.
+  waitUntil(downloadVideoToBlob(lookupId, ssstik.mp4Url));
+
+  // Matchers run synchronously with a 25s budget; overflow goes to background.
+  const pipelinePromise = runLookup(lookupId, ssstik.caption);
   const timeoutPromise = new Promise<typeof TIMEOUT_SENTINEL>((resolve) =>
     setTimeout(() => resolve(TIMEOUT_SENTINEL), SYNC_BUDGET_MS),
   );
@@ -110,18 +142,6 @@ async function handlePost(req: Request) {
       remaining,
     });
   } catch (err) {
-    if (err instanceof IngestionError) {
-      return NextResponse.json(
-        {
-          id: lookupId,
-          status: "failed",
-          reason: "ingestion_failed",
-          code: err.code,
-          retryWithCaption: true,
-        },
-        { status: 422 },
-      );
-    }
     return NextResponse.json(
       {
         id: lookupId,
@@ -131,5 +151,41 @@ async function handlePost(req: Request) {
       },
       { status: 500 },
     );
+  }
+}
+
+async function downloadVideoToBlob(
+  lookupId: string,
+  mp4Url: string,
+): Promise<void> {
+  try {
+    const res = await fetch(mp4Url, {
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        accept: "video/mp4,video/*;q=0.9,*/*;q=0.5",
+      },
+    });
+    if (!res.ok) {
+      console.error(
+        "downloadVideoToBlob: source returned",
+        res.status,
+        mp4Url,
+      );
+      return;
+    }
+    const bytes = Buffer.from(await res.arrayBuffer());
+    const { url } = await put(`videos/${lookupId}.mp4`, bytes, {
+      access: "public",
+      contentType: "video/mp4",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
+    await db
+      .update(lookups)
+      .set({ videoBlobUrl: url })
+      .where(eq(lookups.id, lookupId));
+  } catch (err) {
+    console.error("downloadVideoToBlob failed", lookupId, err);
   }
 }

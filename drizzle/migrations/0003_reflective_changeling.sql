@@ -1,0 +1,1 @@
+ALTER TABLE "lookups" ADD COLUMN "video_blob_url" text;

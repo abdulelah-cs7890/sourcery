@@ -31,49 +31,53 @@ This is a portfolio / resume project. Free tier, no card required.
 
 Walking through a real lookup on
 [https://www.tiktok.com/@lummilux/video/7394481180319501611](https://www.tiktok.com/@lummilux/video/7394481180319501611)
-— a Panda Night Light video that's representative of the *hard* case:
-caption matchers whiff, visual matching saves it.
+— a Panda Night Light video.
 
 ### 1. Paste a URL or drop the video
 
 ![Lookup form](docs/screenshots/02-lookup-form.png)
 
-Either entry point. The URL path is the convenience — but TikTok aggressively
-IP-blocks server-side requests, so the `.mp4` drop zone exists as a fallback
-for anything ssstik can't reach. Frame extraction happens in the browser
-either way (no server-side ffmpeg).
+Either entry point. The URL path is the convenience; the `.mp4` drop zone
+exists as a fallback for anything ssstik can't reach. Frame extraction
+happens in the browser either way (no server-side ffmpeg).
 
-### 2. Caption matchers run (~15s)
+### 2. Results page — frame strip + matches together (~15–30s)
 
-![Match results](docs/screenshots/03-matches.jpg)
+![Result page](docs/screenshots/03-frame-strip.jpg)
 
-The pipeline scraped ssstik for the caption + mp4 URL, extracted keywords
-(stop-words stripped, length-weighted), then queried **AliExpress** and
-**CJ Dropshipping** in parallel and scored candidates by keyword overlap +
-price plausibility.
+Two things happen in parallel on the result page:
 
-For niche products the caption is often too generic. Here the matchers
-returned cushions, necklaces, and a flashlight at ~27–37% confidence
-against a "🐼 Panda Night Light" video. **The product lives in the video,
-not the text.** This is the predictable failure mode — and exactly why
-step 3 exists.
+**Keyword matchers (top row):** the server scraped ssstik for the caption,
+extracted keywords (stop-words stripped, length-weighted), then queried
+**AliExpress** and **CJ Dropshipping** in parallel and ranked candidates
+by keyword overlap + price plausibility. For this video the AliExpress
+matchers nailed it — three actual panda silicone night lights at
+**53–63% confidence**.
 
-### 3. Google Lens of the actual keyframes (~30s)
+**Keyframe extraction (the row of thumbnails):** five frames pulled from
+the video **in your browser** via the native `<video>` element + canvas —
+hardware-accelerated, no ffmpeg, no WASM payload. The server downloads
+the mp4 (via ssstik), re-hosts it on Vercel Blob, the client fetches
+CORS-safely, the rest is client compute.
 
-![Frame strip](docs/screenshots/04-frame-strip.jpg)
+### 3. The three ranked candidates
 
-Five keyframes extracted from the video **in your browser** via the native
-`<video>` element + canvas — hardware-accelerated, no ffmpeg, no WASM
-payload. The server downloads the mp4 (via ssstik), re-hosts it on Vercel
-Blob so the client can fetch CORS-safely, and the rest happens client-side.
+![Match grid close-up](docs/screenshots/04-matches.jpg)
 
-Click any thumbnail and it opens Google Lens at
-`lens.google.com/uploadbyurl?url=<frame>` with that exact frame pre-loaded.
-Lens then reverse-searches the actual product visually — surfacing the
-panda night light directly instead of cushions or flashlights. **The
-matcher covers the easy case; Lens covers the hard one.** Every lookup
-has the visual escape hatch — there's no "matcher returned junk, user is
-stuck" state.
+Each card surfaces the source (AliExpress / CJ), confidence %, real
+price, product image, and a one-click link to the supplier. **Estimate
+margin** expands an inline calculator with cost / sell-price / ad spend /
+shipping inputs and computes net per unit + breakeven volume at $300/mo
+ad spend.
+
+### Always-on backup — Google Lens
+
+When the caption is too generic and matchers whiff (think
+`#tiktokmademebuyit` with no other text), every keyframe in the strip
+above doubles as a Google Lens reverse-search link:
+`lens.google.com/uploadbyurl?url=<frame>` opens with the frame
+pre-loaded. The matcher covers the easy case; Lens covers the hard one.
+**No "matchers returned junk, user is stuck" state.**
 
 ---
 

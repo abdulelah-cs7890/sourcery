@@ -87,39 +87,61 @@ await page.waitForSelector("input[type=url]");
 await page.waitForTimeout(500);
 await shot("02-lookup-form.png");
 
-console.log("[3/5] Submitting panda URL via API (bypassing form) + capturing matches…");
-// POST directly using Playwright's request context (inherits cookies from page).
-const apiRes = await context.request.post(SITE + "/api/lookup", {
-  data: { tiktokUrl: PANDA_URL },
-  headers: { "content-type": "application/json" },
-});
-const apiBody = await apiRes.json().catch(() => null);
-console.log("  /api/lookup →", apiRes.status(), JSON.stringify(apiBody).slice(0, 200));
-if (apiRes.status() !== 200 || !apiBody?.id) {
-  console.error("Lookup creation failed; bailing.");
-  await browser.close();
-  process.exit(1);
+// Either reuse an existing lookup id (preferred — AliExpress matchers are
+// flaky, so picking a known-good past lookup keeps the screenshot
+// deterministic) OR submit a fresh one.
+let lookupId = process.env.PANDA_LOOKUP_ID;
+if (lookupId) {
+  console.log("[3/5] Reusing existing lookup", lookupId, "→ navigating to result page…");
+} else {
+  console.log("[3/5] Submitting panda URL via API (bypassing form)…");
+  const apiRes = await context.request.post(SITE + "/api/lookup", {
+    data: { tiktokUrl: PANDA_URL },
+    headers: { "content-type": "application/json" },
+  });
+  const apiBody = await apiRes.json().catch(() => null);
+  console.log(
+    "  /api/lookup →",
+    apiRes.status(),
+    JSON.stringify(apiBody).slice(0, 200),
+  );
+  if (apiRes.status() !== 200 || !apiBody?.id) {
+    console.error("Lookup creation failed; bailing.");
+    await browser.close();
+    process.exit(1);
+  }
+  lookupId = apiBody.id;
+  console.log("  lookupId:", lookupId);
 }
-const lookupId = apiBody.id;
-console.log("  lookupId:", lookupId);
 
 await page.goto(`${SITE}/lookup/${lookupId}`, { waitUntil: "networkidle" });
 
-// Wait for matches to render (MatchCard contains "% match" text)
+// Wait for matches + frame strip to render
 await page.waitForFunction(
   () => document.body.innerText.includes("% match"),
   { timeout: 60_000 },
 );
-await page.waitForTimeout(1_000);
-await shot("03-matches.jpg", { fullPage: true });
-
-console.log("[4/5] Waiting for frame strip…");
-// FrameStrip renders <img alt="Frame N"> tags. Wait for the first one.
 await page.waitForSelector('img[alt^="Frame "]', { timeout: 90_000 });
-await page.waitForTimeout(2_000); // let all 5 load
-await shot("04-frame-strip.jpg", { fullPage: true });
+await page.waitForTimeout(2_000); // let all 5 frames load
 
-// Grab the first keyframe URL for the Lens screenshot
+// Two distinct viewport captures from the same page:
+//   03 = top — caption + frame strip section
+//   04 = bottom — matches grid
+console.log("[3/5] Capturing 03-frame-strip.jpg (top of result page)…");
+await page.evaluate(() => window.scrollTo(0, 0));
+await page.waitForTimeout(500);
+await shot("03-frame-strip.jpg");
+
+console.log("[4/5] Capturing 04-matches.jpg (matches grid)…");
+await page.evaluate(() => {
+  // Scroll so the matches grid is the focal point.
+  const grid = document.querySelector(".grid");
+  if (grid) grid.scrollIntoView({ behavior: "instant", block: "start" });
+});
+await page.waitForTimeout(500);
+await shot("04-matches.jpg");
+
+// Grab the first keyframe URL for any downstream use
 const firstFrameUrl = await page.getAttribute(
   'img[alt="Frame 1"]',
   "src",

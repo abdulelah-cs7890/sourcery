@@ -29,7 +29,7 @@ export default function MarginCalculator({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition self-start"
+        className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition self-start cursor-pointer"
       >
         Estimate margin →
       </button>
@@ -45,7 +45,7 @@ export default function MarginCalculator({
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-[10px] text-[var(--color-text-faint)] hover:text-[var(--color-text)] transition"
+          className="text-[10px] text-[var(--color-text-faint)] hover:text-[var(--color-text)] transition cursor-pointer"
         >
           Hide
         </button>

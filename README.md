@@ -1,11 +1,12 @@
 # Sourcery
 
-**Find the actual TikTok source.** Paste a viral TikTok product URL (or drop the
-downloaded `.mp4`) and Sourcery returns the AliExpress / CJ Dropshipping
-supplier, real prices, and a Google Lens reverse-search of the actual video
-keyframes — usually in under 30 seconds.
+> Find the source of any viral TikTok product. Paste a URL → get the
+> AliExpress / CJ Dropshipping supplier + a Google Lens reverse-search of
+> the actual video keyframes. Under 30 seconds.
 
 🟢 **Live:** [sourcery-khaki.vercel.app](https://sourcery-khaki.vercel.app)
+
+![Sourcery landing page](docs/screenshots/01-hero.png)
 
 ---
 
@@ -23,6 +24,73 @@ lookups** at `/trending` — a winners list a competitor can't easily clone
 without inheriting the user base.
 
 This is a portfolio / resume project. Free tier, no card required.
+
+---
+
+## The lookup loop
+
+Walking through a real lookup on
+[https://www.tiktok.com/@lummilux/video/7394481180319501611](https://www.tiktok.com/@lummilux/video/7394481180319501611)
+— a Panda Night Light video that's representative of the *hard* case:
+caption matchers whiff, visual matching saves it.
+
+### 1. Paste a URL or drop the video
+
+![Lookup form](docs/screenshots/02-lookup-form.png)
+
+Either entry point. The URL path is the convenience — but TikTok aggressively
+IP-blocks server-side requests, so the `.mp4` drop zone exists as a fallback
+for anything ssstik can't reach. Frame extraction happens in the browser
+either way (no server-side ffmpeg).
+
+### 2. Caption matchers run (~15s)
+
+![Match results](docs/screenshots/03-matches.jpg)
+
+The pipeline scraped ssstik for the caption + mp4 URL, extracted keywords
+(stop-words stripped, length-weighted), then queried **AliExpress** and
+**CJ Dropshipping** in parallel and scored candidates by keyword overlap +
+price plausibility.
+
+For niche products the caption is often too generic. Here the matchers
+returned cushions, necklaces, and a flashlight at ~27–37% confidence
+against a "🐼 Panda Night Light" video. **The product lives in the video,
+not the text.** This is the predictable failure mode — and exactly why
+step 3 exists.
+
+### 3. Google Lens of the actual keyframes (~30s)
+
+![Frame strip](docs/screenshots/04-frame-strip.jpg)
+
+Five keyframes extracted from the video **in your browser** via the native
+`<video>` element + canvas — hardware-accelerated, no ffmpeg, no WASM
+payload. The server downloads the mp4 (via ssstik), re-hosts it on Vercel
+Blob so the client can fetch CORS-safely, and the rest happens client-side.
+
+Click any thumbnail and it opens Google Lens at
+`lens.google.com/uploadbyurl?url=<frame>` with that exact frame pre-loaded.
+Lens then reverse-searches the actual product visually — surfacing the
+panda night light directly instead of cushions or flashlights. **The
+matcher covers the easy case; Lens covers the hard one.** Every lookup
+has the visual escape hatch — there's no "matcher returned junk, user is
+stuck" state.
+
+---
+
+## The trending board
+
+![Trending board](docs/screenshots/05-trending.jpg)
+
+[`/trending`](https://sourcery-khaki.vercel.app/trending) is bottom-up
+from real Sourcery lookups in the last 7 days. A nightly Vercel Cron at
+3am UTC runs the aggregation: joins `matches` ⨝ `lookups`, groups by
+`product_key`, counts distinct users, upserts `trending_agg`. Products
+that appear across multiple lookups get a lime **HOT** badge.
+
+This is the long-term moat — a winners list a competitor can't replicate
+without inheriting the user base. Even at small scale, it's already
+showing real signal (panda night lights, kitchen gadgets, light-up
+necklaces — the actual viral inventory).
 
 ---
 
@@ -189,7 +257,7 @@ Then open [http://localhost:3000](http://localhost:3000).
 | Week 3 — visual matching + Sentry | ✅ shipped |
 | Week 4a — public surface + deploy | ✅ shipped |
 | Week 4b — browser-side frame extraction | ✅ shipped |
-| Week 4c — README + trending + margin calc | 🔨 in progress |
+| Week 4c — README + trending + margin calc | ✅ shipped |
 | Week 4d — full visual redesign (Astra-style) | ✅ shipped |
 
 ---

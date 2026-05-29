@@ -2,6 +2,7 @@ import { put } from "@vercel/blob";
 import { waitUntil } from "@vercel/functions";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { db, lookups } from "@/lib/db";
@@ -167,11 +168,11 @@ async function downloadVideoToBlob(
       },
     });
     if (!res.ok) {
-      console.error(
-        "downloadVideoToBlob: source returned",
-        res.status,
-        mp4Url,
+      const err = new Error(
+        `downloadVideoToBlob: source returned ${res.status} for ${mp4Url}`,
       );
+      console.error(err.message);
+      Sentry.captureException(err, { tags: { lookupId, kind: "video_fetch" } });
       return;
     }
     const bytes = Buffer.from(await res.arrayBuffer());
@@ -187,5 +188,6 @@ async function downloadVideoToBlob(
       .where(eq(lookups.id, lookupId));
   } catch (err) {
     console.error("downloadVideoToBlob failed", lookupId, err);
+    Sentry.captureException(err, { tags: { lookupId, kind: "video_blob" } });
   }
 }

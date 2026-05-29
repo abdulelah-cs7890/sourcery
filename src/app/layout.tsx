@@ -14,10 +14,28 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://sourcery-khaki.vercel.app";
+const TITLE = "Sourcery — Find the source of any viral TikTok product";
+const DESCRIPTION =
+  "Paste a TikTok URL. Get the AliExpress / CJ Dropshipping supplier, real prices, and a Google Lens reverse-search of the actual video frames.";
+
 export const metadata: Metadata = {
-  title: "Sourcery — Find the source of any viral TikTok product",
-  description:
-    "Paste a TikTok URL. Get the AliExpress / CJ Dropshipping supplier, real prices, and a Google Lens reverse-search of the actual video frames.",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: "Sourcery",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

@@ -4,6 +4,13 @@
 > AliExpress / CJ Dropshipping supplier + a Google Lens reverse-search of
 > the actual video keyframes. Under 30 seconds.
 
+[![CI](https://github.com/abdulelah-cs7890/sourcery/actions/workflows/ci.yml/badge.svg)](https://github.com/abdulelah-cs7890/sourcery/actions/workflows/ci.yml)
+[![Performance 91](https://img.shields.io/badge/Performance-91-c8ff3e?style=flat-square&logo=lighthouse&logoColor=white)](docs/lighthouse.html)
+[![Accessibility 93](https://img.shields.io/badge/Accessibility-93-c8ff3e?style=flat-square&logo=lighthouse&logoColor=white)](docs/lighthouse.html)
+[![Best Practices 100](https://img.shields.io/badge/Best%20Practices-100-c8ff3e?style=flat-square&logo=lighthouse&logoColor=white)](docs/lighthouse.html)
+[![SEO 100](https://img.shields.io/badge/SEO-100-c8ff3e?style=flat-square&logo=lighthouse&logoColor=white)](docs/lighthouse.html)
+[![License: MIT](https://img.shields.io/badge/License-MIT-c8ff3e?style=flat-square)](#license)
+
 🟢 **Live:** [sourcery-khaki.vercel.app](https://sourcery-khaki.vercel.app)
 
 ![Sourcery landing page](docs/screenshots/01-hero.png)
